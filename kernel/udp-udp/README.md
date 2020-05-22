@@ -65,7 +65,7 @@ Since XDP programs are run on all packets, this part of the program determines i
 
 ```
         uint32_t dataLocation = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
-		if (data + dataLocation + 1 > data_end) return XDP_PASS; 
+        if (data + dataLocation + 1 > data_end) return XDP_PASS; 
 
 		char * udpDataStart = data + dataLocation;
 		char machine = udpDataStart[0];
@@ -160,3 +160,9 @@ The `tx_port` map is used to determine which interface should be used for egress
 		bpf_trace_printk(fwdError, sizeof(fwdError), rc);
 ```
 If the forwarding table lookup is successful, the source and destination MAC address is copied into the ethernet header and `bpf_redirect_map` is called.
+
+## Functionality
+
+This implementation of the CBR functions as expected, but is not viable for production applications due to using UDP for ingress packets. It was originally used as a proof-of-concept and development ground for the basic CBR implementation before development on the TCP-UDP version began.
+
+As implemented, this CBR is limited to 256 destination servers due to a single byte being used for determining the destination server from the payload. In addition, this implementation only supports IPv4 and not IPv6.
