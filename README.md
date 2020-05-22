@@ -26,9 +26,25 @@ The UDP-UDP implementation uses IPV4 UDP packets for both ingress and egress. Th
 
 ## Artifacts
 
+### Enviornment
 
+The `enviornment` folder contains `ip.sh` which sets up a testing enviornment for the CBR on a single Linux machine. This testing enviornment emulates the topology shown above, but non test enviornment topologies can be created instead for development or deployment using cloud or physical machines. Documentation for setting up the test enviornment is detaliled in the directory's README.
+
+### Kernel
+
+The `kernel` folder contains the XDP program code for the UDP-UDP and TCP-UDP implementations found in their respective `udp-udp` and `tcp-udp` subdirectories. Each of these subdirectories also contains a README documenting their implementations and functionality.
+
+### User
+
+The `user` folder contains the `loader.c` for loading the XDP programs onto network interfaces and `map.c` for populating the BPF maps. Documentation for using and modifying the loader and map program is detailed in the directory's README.
+
+### Common
+
+The `common` folder contains the `cbr.h` header file for the kernel and userspace programs. Documentation detailing this header file is detailed in the directory's README.
 
 ## Future Work
+
+The initial work on this project was limited to two 10 week independent studies and provides only a proof of concept for this XDP use case. Additional work is needed to add functionality that is needed for viability and analyze performance improvement.
 
 ### Timing
 
