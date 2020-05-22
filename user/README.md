@@ -4,7 +4,7 @@ This directory contains `loader.c`, for loading the XDP program onto an interfac
 
 ## Loader
 
-Loader uses the `bpf/libbpf.h` library to load an XDP program onto the specified interface. The loader is modified version of `xdp_loader.c` from the [xdp-tutorial repository](https://github.com/xdp-project/xdp-tutorial/blob/master/basic02-prog-by-name/xdp_loader.c). It's implementation is described below.
+Loader uses the `bpf/libbpf.h` library to load an XDP program onto the specified interface. The loader is modified version of `xdp_loader.c` from the [xdp-tutorial repository](https://github.com/xdp-project/xdp-tutorial/blob/master/basic02-prog-by-name/xdp_loader.c). Its implementation is described below.
 
 ### Constants
 ```
@@ -155,3 +155,94 @@ If the file located at `mapName` exists, it means that the maps have already bee
    printf("Pinned maps\n");
 ```
 This code pins the maps to the directory specified in `map`.
+
+## Map
+
+Loader uses the `bpf/libbpf.h` library to populate the BPF Maps pinned by the loader. Its implementation is described below.
+
+### Constants
+```
+char *txMapName = "/sys/fs/bpf/wlp2s0/tx_port";
+char *txMapSource = "wlp2s0";
+char *txMapRedirect = "gw0";
+
+char *ipsMapName = "/sys/fs/bpf/wlp2s0/xdp_server_ips";
+char *ips[] = {"10.0.0.1", "10.0.0.2", "10.0.0.3"};
+
+char *contentMapName = "/sys/fs/bpf/wlp2s0/redirect";
+char machines[] = {'b', 'c'};
+```
+
+These variables are used in populating the BPF maps. They are specific to your development system and need to be changed accordingly. In future versions this could be done through command line arguments.
+
+- `txMapName` is the directory and map name for the `tx_port` map
+- `txMapSource` is the ingress interface for the CBR
+- `txMapRedirect` is the egress interface for the CBR
+- `ipsMapName` is the directory and map name for the `xdp_server_ips` map
+- `ips` is an array of IP addresses for the destination servers with index 0 being the IP address of the CBR server
+- `contentMapName` is the directory and map name for the `redirect` map
+- `machines` is an array for the payload byte used for identifying the destination server. Index `n` corresponds to server `n + 1`
+
+## TX Port
+
+```
+  int txPortFD = bpf_obj_get(txMapName);
+  if (txPortFD < 0) {
+    printf("Error finding %s map\n", txMapName);
+    exit(1);
+  }
+
+  int sourceIndex = if_nametoindex(txMapSource);
+  if (sourceIndex == 0) perror("Source Index");
+  
+  int redirectIndex = if_nametoindex(txMapRedirect);
+  if (redirectIndex == 0) perror("Redirect Index");
+  
+  error = bpf_map_update_elem(txPortFD, &sourceIndex, &redirectIndex, 0);
+  if (error) {
+    printf("Error updating tx port\n");
+    exit(1);
+  }
+
+  printf("tx_port: redirecting %s:%i to %s:%i\n", txMapSource, sourceIndex, txMapRedirect, redirectIndex);
+```
+
+This code converts the `txMapSource` and `txMapRedirect` to interface IDs and adds the redirect mapping to the `tx_port` map.
+
+## IPs
+```
+ int ipsFD = bpf_obj_get(ipsMapName);
+  if (ipsFD < 0) {
+    printf("Error finding %s map\n", ipsMapName);
+  }
+
+  for (__u32 key = 0; key < SERVERS + 1; key++) {
+    struct ip data = { .addr = inet_addr(ips[key]) };
+    error = bpf_map_update_elem(ipsFD, &key, &data, 0);
+    if (error) {
+      printf("Error updating ips\n");
+      exit(1);
+    }
+    printf("ips: set ip %i to %s\n", key, ips[key]);
+  }
+```
+
+This code adds the IPs from `ips` into a struct and stores them in the `xdp_server_ips` map.
+
+## Content
+```
+int contentFD = bpf_obj_get(contentMapName);
+  if (contentFD < 0) {
+    printf("Error finding %s map\n", contentMapName);
+  }
+
+  for (__u32 key = 1; key <= SERVERS; key++) {
+    error = bpf_map_update_elem(contentFD, &machines[key - 1], &key, 0);
+    if (error) {
+      printf("Error updating content\n");
+      exit(1);
+    }
+    printf("content: routing %c to machine %i\n", machines[key - 1], key);
+  }
+```
+This code adds the content values from `machines` to the `redirect` map.
