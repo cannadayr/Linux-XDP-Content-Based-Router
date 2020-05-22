@@ -4,6 +4,9 @@ This repository contains a proof-of-concept Content Based Router (CBR) implement
 
 This project is part of an Independent Study in Linux Networking at Rose-Hulman Institute of Technology. Its purpose was to develop a practical use case for XDP by creating a content based router with decreased latency between packet ingress and egress when compared to a similar system written in C running in userspace.
 
+## Usage
+
+
 ## Theory of Operation
 
 A content based router (CBR) examines the payload of an incoming packet and then routes the packet to its intended destination server. This section will provide a high level overview of how the CBR functions and then detail two particular implementations.
