@@ -4,21 +4,30 @@ The UDP-UDP CBR accepts ingress UDP packets on port `7777`, reads the first byte
 
 ## Implementation
 
-This section walks through the code and provides an overview of its functionality. Long sections of code are abbreviated by `...`.
+This section walks through the code and provides an overview of its functionality.
 
 ### Maps
 
 ```
 struct bpf_map_def SEC("maps") xdp_server_ips = {
-    ...
+	.type        = BPF_MAP_TYPE_ARRAY,
+	.key_size    = sizeof(__u32),
+	.value_size  = sizeof(struct ip),
+	.max_entries = SERVERS + 1
 };
 
 struct bpf_map_def SEC("maps") tx_port = {
-	...
+	.type = BPF_MAP_TYPE_DEVMAP,
+	.key_size = sizeof(int),
+	.value_size = sizeof(int),
+	.max_entries = 256,
 };
 
 struct bpf_map_def SEC("maps") redirect = {
-	...
+	.type = BPF_MAP_TYPE_HASH,
+	.key_size = sizeof(char),
+	.value_size = sizeof(__u32),
+	.max_entries = 256,
 };
 ```
 
@@ -106,7 +115,7 @@ These IPs are then inserted into the IP header's destination address and source 
 ### IP Checksum
 
 ```
-iph->check = 0;
+        iph->check = 0;
 		
 		uint32_t sum = 0;
 		uint8_t * msg = data + sizeof(struct ethhdr);
@@ -159,7 +168,7 @@ The `tx_port` map is used to determine which interface should be used for egress
 
 		bpf_trace_printk(fwdError, sizeof(fwdError), rc);
 ```
-If the forwarding table lookup is successful, the source and destination MAC address is copied into the ethernet header and `bpf_redirect_map` is called.
+If the forwarding table lookup is successful, the source and destination MAC address is copied into the ethernet header and `bpf_redirect_map` is called to redirect the packet.
 
 ## Functionality
 
