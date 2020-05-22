@@ -2,7 +2,7 @@
 
 This repository contains a proof-of-concept Content Based Router (CBR) implemented using [eXpress Data Path (XDP)](https://www.iovisor.org/technology/xdp) in the Linux kernel.
 
-This project is part of an Independent Study in Linux Networking at Rose-Hulman Institute of Technology. Its purpose was to develop a practical use case for XDP.
+This project is part of an Independent Study in Linux Networking at Rose-Hulman Institute of Technology. Its purpose was to develop a practical use case for XDP by creating a content based router with decreased latency between packet ingress and egress when compared to a similar system written in C running in userspace.
 
 ## Theory of Operation
 

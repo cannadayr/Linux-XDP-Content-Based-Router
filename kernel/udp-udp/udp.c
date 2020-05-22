@@ -32,10 +32,6 @@ struct bpf_map_def SEC("maps") redirect = {
 	.max_entries = 256,
 };
 
-#ifndef lock_xadd
-#define lock_xadd(ptr, val)	((void) __sync_fetch_and_add(ptr, val))
-#endif
-
 SEC("xdp")
 int  xdp_prog_simple(struct xdp_md *ctx) {
 
