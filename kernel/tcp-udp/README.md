@@ -207,8 +207,21 @@ If the forwarding table lookup is successful, the source and destination MAC add
 
 ## Functionality
 
+This implementation of the CBR is closer to a production version but is not viable due to a lack of XDP features.
+
+As implemented, the program will correctly identify a TCP data packet containing `cbr` as the first three bytes, convert the TCP packet to UDP, and forward the packet to the correct destination machine. The program 
+will not send a TCP acknowledgement and does not support variable payload sizes. These shortcomings are discussed further below.
+
+### TCP Data Packet
+
+Currently the program uses the first three bytes of the TCP payload to determine if the TCP packet contains data or if it is a handshake or acknowledgement packet. A better way to identify TCP data packets (either by reading the packet itself or checking with the userspace TCP server if the connection is currently open and awaiting a data packet) is needed.
+
 ### TCP Server
 
-### IPV4
+In order for the TCP based CBR to function, a TCP server needs to be running on port 7777 in userspace. Packets which are for setting up the connection are passed through to userspace, but the data packets containing `cbr` are not. Since the userspace server never receives the packets, an acknowledgement is never sent. This causes the client to continuiously resend the packet.
+
+In order for this to be fixed, [XDP needs to add support for multiple actions per packet.](https://www.spinics.net/lists/xdp-newbies/msg01680.html). This will allow the packet to be redirected to the destination server as well as passed to userspace for handling by the TCP server.
 
 ### Variable Payload Size
+
+Due to the BPF compiler and verifier, `__builtin_memcpy` only supports constant sizes. This call to `__buildin_memcpy` is used to copy the TCP payload data from the end of the TCP header to the end of the UDP header.Additional functionality of variable sizes is needed in order to support TCP payloads of variable lengths. Until then, all TCP data packets must be of a fixed size (currently set to 5).
